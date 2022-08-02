@@ -22,8 +22,7 @@ class IMonitor(metaclass=abc.ABCMeta):
         Returns:
             The connection to the target
         """
-        conn = deepcopy(self.session.target._target_connection)
-        return conn
+        return deepcopy(self.session.target._target_connection)
 
     def run(self, test_case: TestCase):
         """
@@ -32,15 +31,14 @@ class IMonitor(metaclass=abc.ABCMeta):
         """
         self.logger.open_test_step(f"Calling Monitor {self.name()}")
         try:
-            result = self.test()
-            if not result:
+            if result := self.test():
+                self.logger.log_info(f"Monitor {self.name()} succeeded")
+            else:
                 self.logger.log_error(f"Monitor {self.name()} Failed!")
                 if test_case is not None:
                     self.session.add_suspect(test_case)
                 else:
                     self.logger.log_error('No test_case in session to add as suspect!')
-            else:
-                self.logger.log_info(f"Monitor {self.name()} succeeded")
         except Exception as e:
             # Ignore exceptions
             self.session.logger.log_error(f"The monitor threw an exception: {str(e)}")

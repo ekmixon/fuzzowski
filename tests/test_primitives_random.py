@@ -28,7 +28,5 @@ def test_random_original_value(test_random):
 
 
 def test_random_reset(test_random):
-    for x in test_random:
-        pass
     assert test_random.render() == test_random.original_value == b'Test'
 

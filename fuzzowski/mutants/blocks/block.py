@@ -108,21 +108,21 @@ class Block(Mutant):
         return self._rendered
 
     def _render_dep(self):
-        if self.dep_compare == "==":
-            if self.dep_values and self.request.names[self.dep]._value not in self.dep_values:
-                self._rendered = b""
-                return self._rendered
-
-            elif not self.dep_values and self.request.names[self.dep]._value != self.dep_value:
-                self._rendered = b""
-                return self._rendered
-
         if self.dep_compare == "!=":
             if self.dep_values and self.request.names[self.dep]._value in self.dep_values:
                 self._rendered = b""
                 return self._rendered
 
             elif self.request.names[self.dep]._value == self.dep_value:
+                self._rendered = b""
+                return self._rendered
+
+        elif self.dep_compare == "==":
+            if self.dep_values and self.request.names[self.dep]._value not in self.dep_values:
+                self._rendered = b""
+                return self._rendered
+
+            elif not self.dep_values and self.request.names[self.dep]._value != self.dep_value:
                 self._rendered = b""
                 return self._rendered
 
@@ -151,18 +151,12 @@ class Block(Mutant):
         @return: Number of mutated forms this primitive can take.
         """
 
-        num_mutations = 0
-
-        for item in self.stack:
-            if item.fuzzable:
-                num_mutations += item.num_mutations
-
         # if this block is associated with a group, then multiply out the number of possible mutations.
         # TODO: Multiply when adding groups
         # if self.group:
         #    num_mutations *= len(self.request.names[self.group].values)
 
-        return num_mutations
+        return sum(item.num_mutations for item in self.stack if item.fuzzable)
 
     def push(self, item: Mutant):
         """
@@ -197,14 +191,12 @@ class Block(Mutant):
         else:
             # Iterate through mutations until reaching the desired mutant_index
             self.reset()
-            i = 0
             self._mutation_gen = self._mutation_generator()
-            while i < mutant_index:
+            for _ in range(mutant_index):
                 next(self._mutation_gen)  # The mutation_generator will change everything
-                i += 1
 
     def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__} {self.name}>"
 
     def __len__(self):
         if self.encoder is not None:
@@ -217,9 +209,8 @@ class Block(Mutant):
         for item in self.stack:
             if isinstance(item, Block):
                 fuzzable_items.extend(item.list_fuzzable_mutants())
-            else:
-                if item.fuzzable:
-                    fuzzable_items.append(item)
+            elif item.fuzzable:
+                fuzzable_items.append(item)
         return fuzzable_items
 
     """

@@ -16,8 +16,7 @@ DeviceID = 12345 # BACnet Device ID
 
 # ----------------- Device ID to bytes -------------------------- #
 def bitDeviceID(DeviceID):
-    bytes_id = (DeviceID).to_bytes((DeviceID.bit_length() + 7) // 8, byteorder='big')
-    return bytes_id
+    return (DeviceID).to_bytes((DeviceID.bit_length() + 7) // 8, byteorder='big')
 
 HexDeviceID = bitDeviceID(DeviceID)
 

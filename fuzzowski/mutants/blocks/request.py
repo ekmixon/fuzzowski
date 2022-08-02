@@ -106,13 +106,12 @@ class Request(Block):
         else:
             raise FuzzowskiRuntimeError(f'Invalid path name: {path_name}. Request {m["request"]} not found')
 
-        if m['mutant'] is None:  # Search for a request
+        if m['mutant'] is None:
             return request
-        else:                    # Search for a request.mutant
-            if m['mutant'] in request.names:
-                return request.names[m['mutant']]
-            else:
-                raise FuzzowskiRuntimeError(f'Invalid path name: {path_name}. Mutant {m["mutant"]} not found')
+        if m['mutant'] in request.names:
+            return request.names[m['mutant']]
+        else:
+            raise FuzzowskiRuntimeError(f'Invalid path name: {path_name}. Mutant {m["mutant"]} not found')
 
     def add_response(self, response: Response):
         if response not in self.responses:
@@ -123,8 +122,7 @@ class Request(Block):
             return None
         for response in self.responses:
             try:
-                response_str = response.parse(data)
-                return response_str
+                return response.parse(data)
             except FuzzowskiRuntimeError:
                 pass
         raise FuzzowskiRuntimeError('Responses defined did not match with the data')

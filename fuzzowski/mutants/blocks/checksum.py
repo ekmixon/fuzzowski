@@ -147,21 +147,24 @@ class Checksum(Mutant):
         """
         if type(self._algorithm) is str:
             if self._algorithm == "crc32":
-                check = struct.pack(self._endian + "L", (zlib.crc32(data) & 0xFFFFFFFF))
+                check = struct.pack(f"{self._endian}L", zlib.crc32(data) & 0xFFFFFFFF)
 
             elif self._algorithm == "adler32":
-                check = struct.pack(self._endian + "L", (zlib.adler32(data) & 0xFFFFFFFF))
+                check = struct.pack(f"{self._endian}L", zlib.adler32(data) & 0xFFFFFFFF)
 
             elif self._algorithm == "ipv4":
-                check = struct.pack(self._endian + "H", helpers.ipv4_checksum(data))
+                check = struct.pack(f"{self._endian}H", helpers.ipv4_checksum(data))
 
             elif self._algorithm == "udp":
-                return struct.pack(self._endian + "H",
-                                   helpers.udp_checksum(msg=data,
-                                                        src_addr=ipv4_src,
-                                                        dst_addr=ipv4_dst,
-                                                        )
-                                   )
+                return struct.pack(
+                    f"{self._endian}H",
+                    helpers.udp_checksum(
+                        msg=data,
+                        src_addr=ipv4_src,
+                        dst_addr=ipv4_dst,
+                    ),
+                )
+
 
             elif self._algorithm == "md5":
                 digest = hashlib.md5(data).digest()
@@ -184,14 +187,14 @@ class Checksum(Mutant):
                 check = digest
 
             else:
-                raise FuzzowskiRuntimeError("INVALID CHECKSUM ALGORITHM SPECIFIED: %s" % self._algorithm)
+                raise FuzzowskiRuntimeError(
+                    f"INVALID CHECKSUM ALGORITHM SPECIFIED: {self._algorithm}"
+                )
+
         else:
             check = self._algorithm(data)
 
-        if self._length:
-            return check[:self._length]
-        else:
-            return check
+        return check[:self._length] if self._length else check
 
     @property
     def original_value(self):
@@ -207,7 +210,7 @@ class Checksum(Mutant):
         return self._request.names[block_name].original_value if block_name is not None else None
 
     def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, self._name)
+        return f"<{self.__class__.__name__} {self._name}>"
 
     def __len__(self):
         return len(self.render())

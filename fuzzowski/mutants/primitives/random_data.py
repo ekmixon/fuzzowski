@@ -31,15 +31,15 @@ class RandomData(Mutant):
 
         for _ in range(self.max_mutations):
             # select a random length for this string.
-            if not self.step:
-                length = random.randint(self.min_length, self.max_length)
-            # select a length function of the mutant index and the step.
-            else:
-                length = self.min_length + self._mutant_index * self.step
+            length = (
+                self.min_length + self._mutant_index * self.step
+                if self.step
+                else random.randint(self.min_length, self.max_length)
+            )
 
             # reset the value and generate a random string of the determined length.
             self._value = b""
-            for i in range(length):
+            for _ in range(length):
                 self._value += bytes([random.randint(0, 255)])
 
             mutations.append(self._value)

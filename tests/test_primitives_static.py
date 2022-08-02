@@ -11,8 +11,8 @@ def test_static():
 def test_static1(test_static):
     assert test_static.render() == b'Test' == test_static.original_value
 
-    assert len([x for x in test_static]) == 0
-    assert len([x for x in test_static.mutation_generator()]) == 0
+    assert not list(test_static)
+    assert not list(test_static.mutation_generator())
 
     assert test_static.num_mutations == 0
 

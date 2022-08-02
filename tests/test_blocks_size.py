@@ -121,4 +121,4 @@ def test_size_blocks(test_string, length, output_format, endian, inclusive, muta
 
 
 def _word_to_int(word: bytes, endian: chr) -> int:
-    return struct.unpack(endian + "H", word)[0]
+    return struct.unpack(f"{endian}H", word)[0]

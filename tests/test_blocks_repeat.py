@@ -71,7 +71,7 @@ def test_repeat_spike():
     s_repeat('block1', min_reps=0, max_reps=5)
 
     request = s_get('request_repeat_test')
-    for i in range(0, 6):
+    for i in range(6):
         # block1 value + (block1 * repetitions)
         assert next(request) == b'x ' + b'x ' * i == request.render()
 

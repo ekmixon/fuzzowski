@@ -124,7 +124,7 @@ class Session(object):
         self.logger = FuzzLogger(fuzz_loggers)
 
         if self.session_filename is not None:
-            self.logger.log_info('Using session file: {}'.format(self.session_filename))
+            self.logger.log_info(f'Using session file: {self.session_filename}')
 
         self.target = target
         if target is not None:
@@ -148,13 +148,7 @@ class Session(object):
 
         self._restarter = restarter
 
-        self.monitors = []
-        for monitor_class in monitors:
-            self.monitors.append(monitor_class(self))
-            # TODO: How to pass arbitrary args to monitors? think a good way!
-            #  Maybe passing all the args and let the monitor pick them?
-
-
+        self.monitors = [monitor_class(self) for monitor_class in monitors]
         # Some variables that will be used during fuzzing
         self.last_send = None
         self.last_recv = None
@@ -237,9 +231,8 @@ class Session(object):
             force: if True, the test case will be run even if it is disabled.
         """
         run = True
-        if self.test_case is not None:
-            if force or not self.test_case.disabled:
-                run = self.run()
+        if self.test_case is not None and (force or not self.test_case.disabled):
+            run = self.run()
 
         if run:
             self.next()
@@ -317,16 +310,15 @@ class Session(object):
 
         Returns: The test_case specified by test_case_id, or None if test_case_id is 0
         """
-        if test_case_id > self.total_mutations:
-            test_case_id = self.total_mutations
-
+        test_case_id = min(test_case_id, self.total_mutations)
         if test_case_id == 0:
             test_case_id = 1
-        if self.test_case is not None and test_case_id == self.test_case.id:
-            return self.test_case
-        elif self.test_case is not None and test_case_id < self.test_case.id:
-            # 1st. Reset all
-            self._reset()
+        if self.test_case is not None:
+            if test_case_id == self.test_case.id:
+                return self.test_case
+            elif test_case_id < self.test_case.id:
+                # 1st. Reset all
+                self._reset()
         # if test_case_id == 0:
         #     return None
         for test_case in self._test_cases:
@@ -356,13 +348,12 @@ class Session(object):
         """Skip the current mutant, go to the next mutant"""
         if self.test_case is None:
             return self.next()
-        else:
-            self.logger.log_info(f'Skipping {self.test_case.request.name}.{self.test_case.request.mutant.name}')
-            test_case_mutant = self.test_case.request.mutant
-            while self.test_case is not None and test_case_mutant == self.test_case.request.mutant:
-                self.next()
-            self.logger.log_info(f'Next element: {self.test_case.request.name}.{self.test_case.request.mutant.name}')
-            return self.test_case
+        self.logger.log_info(f'Skipping {self.test_case.request.name}.{self.test_case.request.mutant.name}')
+        test_case_mutant = self.test_case.request.mutant
+        while self.test_case is not None and test_case_mutant == self.test_case.request.mutant:
+            self.next()
+        self.logger.log_info(f'Next element: {self.test_case.request.name}.{self.test_case.request.mutant.name}')
+        return self.test_case
 
     # --------------------------------------------------------------- #
 
@@ -457,30 +448,31 @@ class Session(object):
         Args:
             test_case: The test case to add as a suspect
         """
-        if test_case.id not in self.suspects:
-            self.suspects[test_case.id] = test_case
-            self.logger.log_info(f'Added test case {test_case.id} as a suspect')
+        if test_case.id in self.suspects:
+            return
+        self.suspects[test_case.id] = test_case
+        self.logger.log_info(f'Added test case {test_case.id} as a suspect')
 
-            # Check if crash threshold
-            request_crashes = {}
-            mutant_crashes = {}
-            # TODO: REQUEST WILL HAVE CHANGED WHEN CALLED THIS. FIX
-            for suspect in self.suspects.values():
-                if suspect is not None:
-                    request_name = suspect.request_name
-                    request_crashes[request_name] = request_crashes.get(request_name, 0) + 1
-                    if request_crashes[request_name] >= self.opts.crash_threshold_request:
-                        # Disable request! :o
-                        self.logger.log_fail(f'Crash threshold reached for request {request_name}. Disabling it')
-                        self.disable_by_path_name(request_name)
+        # Check if crash threshold
+        request_crashes = {}
+        mutant_crashes = {}
+        # TODO: REQUEST WILL HAVE CHANGED WHEN CALLED THIS. FIX
+        for suspect in self.suspects.values():
+            if suspect is not None:
+                request_name = suspect.request_name
+                request_crashes[request_name] = request_crashes.get(request_name, 0) + 1
+                if request_crashes[request_name] >= self.opts.crash_threshold_request:
+                    # Disable request! :o
+                    self.logger.log_fail(f'Crash threshold reached for request {request_name}. Disabling it')
+                    self.disable_by_path_name(request_name)
 
-                    mutant_name = suspect.mutant_name
-                    mutant_crashes[mutant_name] = mutant_crashes.get(mutant_name, 0) + 1
-                    if mutant_crashes[mutant_name] >= self.opts.crash_threshold_element:
-                        # Disable mutant! :o
-                        self.logger.log_fail(f'Crash threshold reached for mutant {request_name}.{mutant_name}. '
-                                              f'Disabling it')
-                        self.disable_by_path_name(f'{request_name}.{mutant_name}')
+                mutant_name = suspect.mutant_name
+                mutant_crashes[mutant_name] = mutant_crashes.get(mutant_name, 0) + 1
+                if mutant_crashes[mutant_name] >= self.opts.crash_threshold_element:
+                    # Disable mutant! :o
+                    self.logger.log_fail(f'Crash threshold reached for mutant {request_name}.{mutant_name}. '
+                                          f'Disabling it')
+                    self.disable_by_path_name(f'{request_name}.{mutant_name}')
 
     def add_last_case_as_suspect(self, error: Exception):
         """
@@ -554,7 +546,8 @@ class Session(object):
                 self.logger.log_info(restarter_info)
             except Exception as e:
                 self.logger.log_fail(
-                    "The Restarter module {} threw an exception: {}".format(self._restarter.name(), e))
+                    f"The Restarter module {self._restarter.name()} threw an exception: {e}"
+                )
 
     def check_monitors(self):
         """ Check all monitors, and add the current test case as a suspect if a monitor returns False """
@@ -595,13 +588,11 @@ class Session(object):
 
         @see self.load_session_state()
         """
-        state = {
+        return {
             "mutant_index": self.mutant_index,
-            "suspect_ids": [key for key in self.suspects.keys()],  # TODO: Save also the contents of the suspect
-            "disabled_names": [key for key in self.disabled_elements.keys()]
-            # TODO: crashes, last recv...
+            "suspect_ids": list(self.suspects.keys()),
+            "disabled_names": list(self.disabled_elements.keys()),
         }
-        return state
 
     # --------------------------------------------------------------- #
 
@@ -642,9 +633,8 @@ class Session(object):
 
         data = self.save_session_state()
 
-        fh = open(session_filename, "wb+")
-        fh.write(zlib.compress(pickle.dumps(data, protocol=2)))
-        fh.close()
+        with open(session_filename, "wb+") as fh:
+            fh.write(zlib.compress(pickle.dumps(data, protocol=2)))
 
     def import_file(self, session_filename: str = None):
         """

@@ -15,12 +15,12 @@ def test_mutant_nonfuzzable():
 def test_mutant1(test_mutant):
     assert test_mutant.render() == b'Test'
 
-    assert [x for x in test_mutant] == [b'a', b'b', b'c']
-    assert [x for x in test_mutant.mutation_generator()] == [b'a', b'b', b'c']
-    assert [x for x in test_mutant.mutation_generator(0)] == [b'a', b'b', b'c']
-    assert [x for x in test_mutant.mutation_generator(1)] == [b'b', b'c']
-    assert [x for x in test_mutant.mutation_generator(2)] == [b'c']
-    assert [x for x in test_mutant.mutation_generator(3)] == []
+    assert list(test_mutant) == [b'a', b'b', b'c']
+    assert list(test_mutant.mutation_generator()) == [b'a', b'b', b'c']
+    assert list(test_mutant.mutation_generator(0)) == [b'a', b'b', b'c']
+    assert list(test_mutant.mutation_generator(1)) == [b'b', b'c']
+    assert list(test_mutant.mutation_generator(2)) == [b'c']
+    assert not list(test_mutant.mutation_generator(3))
 
     assert test_mutant.num_mutations == 3
 
@@ -66,7 +66,7 @@ def test_mutant_nonfuzzable1(test_mutant_nonfuzzable):
 
     assert test_mutant_nonfuzzable.render() == b'Test'
 
-    assert [x for x in test_mutant_nonfuzzable.mutation_generator()] == []
+    assert not list(test_mutant_nonfuzzable.mutation_generator())
 
     with pytest.raises(FuzzowskiRuntimeError):
         assert test_mutant_nonfuzzable.mutation_generator(1)
@@ -77,7 +77,7 @@ def test_mutant_original_value(test_mutant):
     assert test_mutant.original_value == b'Test'
 
     assert test_mutant._fuzz_complete is False
-    for x in test_mutant.mutation_generator():
+    for _ in test_mutant.mutation_generator():
         pass
     assert test_mutant.render() == b'Test'
     assert test_mutant.mutant_index == 0

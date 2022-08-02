@@ -90,7 +90,7 @@ class Fuzzowski(object):
         # Connect nodes of graph
         if self.args.fuzz_protocol == 'raw' and self.fuzz_requests is not None:
             requests = self._generate_requests_from_strings(self.fuzz_requests)
-            for i in range(0, len(requests)):
+            for i in range(len(requests)):
                 if i == 0:
                     self.session.connect(requests[i])
                 if len(requests) > 1:
@@ -175,7 +175,7 @@ class Fuzzowski(object):
         protocols_help = 'Requests of the protocol to fuzz, default All\n'
         for fuzzer_protocol in IFuzzer.__subclasses__():
             methods = ', '.join([req.__name__ for req in fuzzer_protocol.get_requests()])
-            protocols_help += '  {}: [{}]\n'.format(fuzzer_protocol.name, methods)
+            protocols_help += f'  {fuzzer_protocol.name}: [{methods}]\n'
         protocols_help += '  {}: [{}]'.format('raw', repr("'\x01string\n' '\x02request2\x00' ...").strip('"'))
         fuzzers_grp = self.parser.add_argument_group('Fuzzers')
         fuzzers_grp.add_argument('-i', dest="include", nargs='+', help="Include modules from path[s]",
@@ -188,7 +188,7 @@ class Fuzzowski(object):
         restarters_grp = self.parser.add_argument_group('Restart options')
         restarters_help = 'Restarter Modules:\n'
         for restarter in IRestarter.__subclasses__():
-            restarters_help += '  {}: {}\n'.format(restarter.name(), restarter.help())
+            restarters_help += f'  {restarter.name()}: {restarter.help()}\n'
         restarters_grp.add_argument('--restart', nargs='+', default=[], metavar=('module_name', 'args'),
                                     help=restarters_help)
         restarters_grp.add_argument("--restart-sleep", dest="restart_sleep_time", type=int, default=5,
@@ -199,7 +199,7 @@ class Fuzzowski(object):
         monitors_grp = self.parser.add_argument_group('Monitor options')
         monitors_help = 'Monitor Modules:\n'
         for monitor in monitor_classes:
-            monitors_help += '  {}: {}\n'.format(monitor.name(), monitor.help())
+            monitors_help += f'  {monitor.name()}: {monitor.help()}\n'
         monitors_grp.add_argument('--monitors', '-m', nargs='+', default=[],
                                   help=monitors_help, choices=monitor_names)
 
@@ -231,40 +231,28 @@ class Fuzzowski(object):
                 print('When choosing raw you must define the packets with the -r option!')
                 exit(1)
             self.fuzz_requests = args.fuzz_requests
-            self.session_filename = '{}_{}_{}_{}_{}_{}.session'.format(
-                args.fuzz_protocol,
-                args.host,
-                args.port,
-                args.protocol,
-                fuzz_opts,
-                hashlib.md5(", ".join(args.fuzz_requests).encode('utf-8')).hexdigest(),
-            )
+            self.session_filename = f"""{args.fuzz_protocol}_{args.host}_{args.port}_{args.protocol}_{fuzz_opts}_{hashlib.md5(", ".join(args.fuzz_requests).encode('utf-8')).hexdigest()}.session"""
+
         else:  # Already defined protocol
             fuzz_protocol = [icl for icl in IFuzzer.__subclasses__() if icl.name == args.fuzz_protocol][0]
             fuzz_protocol.define_nodes(**args.__dict__)
             for method_name in args.fuzz_requests:
                 if method_name not in [req.__name__ for req in fuzz_protocol.get_requests()]:
                     print('Protocol {} only allows the following methods') \
-                        .format(args.fuzzer_protocol.__name__,
+                            .format(args.fuzzer_protocol.__name__,
                                 ', '.join([req.__name__ for req in args.fuzzer_protocol.get_requests()]))
                     exit(1)
             self.fuzz_requests = args.fuzz_requests
             if len(self.fuzz_requests) > 0:
                 self.fuzz_methods = [getattr(fuzz_protocol, method_name) for method_name in args.fuzz_requests]
             else:  # All methods
-                self.fuzz_methods = [method for method in fuzz_protocol.get_requests()]
+                self.fuzz_methods = list(fuzz_protocol.get_requests())
             if len(args.fuzz_requests) == 1:
                 reqs = args.fuzz_requests[0]
             else:
                 reqs = hashlib.md5(", ".join(args.fuzz_requests).encode('utf-8')).hexdigest()
-            self.session_filename = '{}_{}_{}_{}_{}_{}.session'.format(
-                args.fuzz_protocol,
-                args.host,
-                args.port,
-                args.protocol,
-                fuzz_opts,
-                reqs
-            )
+            self.session_filename = f'{args.fuzz_protocol}_{args.host}_{args.port}_{args.protocol}_{fuzz_opts}_{reqs}.session'
+
 
         self.restart_module = None
         if len(args.restart) > 0:
@@ -299,9 +287,8 @@ class Fuzzowski(object):
         for block in block_list:
             if hasattr(block, 'stack'):
                 self._set_file_for_strings(block.stack, filename)
-            else:
-                if isinstance(block, String):
-                    block.set_filename(filename)
+            elif isinstance(block, String):
+                block.set_filename(filename)
 
     def _set_callback_for_strings(self, block_list: "list of IFuzzable", callback: str) -> None:
         """
@@ -317,9 +304,8 @@ class Fuzzowski(object):
         for block in block_list:
             if hasattr(block, 'stack'):
                 self._set_callback_for_strings(block.stack)
-            else:
-                if isinstance(block, String):
-                    block.set_callback_commands(callback)
+            elif isinstance(block, String):
+                block.set_callback_commands(callback)
 
     # --------------------------------------------------------------- #
 
@@ -336,10 +322,9 @@ class Fuzzowski(object):
             list of Request: list of initialized Requests
         """
         str_i = 1
-        req_i = 1
         requests = []
-        for fuzz_request in fuzz_requests:
-            request_name = 'request{}'.format(req_i)
+        for req_i, fuzz_request in enumerate(fuzz_requests, start=1):
+            request_name = f'request{req_i}'
             uni_request = fuzz_request.encode().decode('unicode_escape')
             s_initialize(request_name)
             for block_split in Fuzzowski.position_pattern.split(uni_request):
@@ -349,14 +334,10 @@ class Fuzzowski(object):
                     #s_string(base_value, name='{}_{}'.format(base_value, str_i))
                     s_string(base_value)
                     str_i += 1
-                else:
-                    # Other thing, add Static if len > 0
-                    if len(block_split) > 0:
-                        s_static(block_split)
-                        # TODO: Identify delimiters, bytes, ...
+                elif len(block_split) > 0:
+                    s_static(block_split)
+                    # TODO: Identify delimiters, bytes, ...
             requests.append(s_get(request_name))
-            req_i += 1
-
         return requests
 
     # --------------------------------------------------------------- #

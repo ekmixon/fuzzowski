@@ -119,12 +119,10 @@ class TelnetConnection(ITargetConnection):
             if e.errno == errno.ECONNABORTED:
                 # raise(exception.FuzzowskiTargetConnectionAborted(socket_errno=e.errno, socket_errmsg=e.strerror), None, sys.exc_info()[2])
                 raise exception.FuzzowskiTargetConnectionAborted(socket_errno=e.errno, socket_errmsg=e.strerror)  # .with_traceback(sys.exc_info()[2])
-            elif (e.errno == errno.ECONNRESET) or \
-                    (e.errno == errno.ENETRESET) or \
-                    (e.errno == errno.ETIMEDOUT):
+            elif e.errno in [errno.ECONNRESET, errno.ENETRESET, errno.ETIMEDOUT]:
                 # raise(exception.FuzzowskiTargetConnectionReset, None, sys.exc_info()[2])
                 raise exception.FuzzowskiTargetConnectionReset  # .with_traceback(sys.exc_info()[2])
-            elif e.errno == errno.EWOULDBLOCK or e.errno == errno.EAGAIN:  # timeout condition if using SO_RCVTIMEO or SO_SNDTIMEO
+            elif e.errno in [errno.EWOULDBLOCK, errno.EAGAIN]:  # timeout condition if using SO_RCVTIMEO or SO_SNDTIMEO
                 # raise exception.FuzzowskiTargetRecvTimeout()
                 data = b''
             else:
@@ -159,16 +157,17 @@ class TelnetConnection(ITargetConnection):
             if e.errno == errno.ECONNABORTED:
                 raise(exception.FuzzowskiTargetConnectionAborted(socket_errno=e.errno, socket_errmsg=e.strerror),
                        None, sys.exc_info()[2])
-            elif (e.errno == errno.ECONNRESET) or \
-                    (e.errno == errno.ENETRESET) or \
-                    (e.errno == errno.ETIMEDOUT) or \
-                    (e.errno == errno.EPIPE):
+            elif e.errno in [
+                errno.ECONNRESET,
+                errno.ENETRESET,
+                errno.ETIMEDOUT,
+                errno.EPIPE,
+            ]:
                 raise(exception.FuzzowskiTargetConnectionReset(None, sys.exc_info()[2]))
                 # raise(exception.FuzzowskiTargetConnectionReset, None, sys.exc_info()[2])
             else:
                 raise
-        # TODO: OSError:
-        except (Exception, OSError) as e:
+        except Exception as e:
             self._active_session = False
             raise(exception.FuzzowskiTargetConnectionAborted(socket_errno=e.errno, socket_errmsg=e.strerror),
                    None, sys.exc_info()[2])

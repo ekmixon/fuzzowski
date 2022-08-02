@@ -21,7 +21,7 @@ def test_http_request():
     # Initialize requests from the Mock HTTP Fuzzer (this is what is done in __main__ when selecting a Fuzzer)
     fuzzer = MockHTTPFuzzer
     fuzzer.define_nodes()
-    fuzz_methods = [method for method in fuzzer.get_requests()]
+    fuzz_methods = list(fuzzer.get_requests())
     for method in fuzz_methods:
         method(session)  # Initialize the request with this
 
@@ -37,14 +37,14 @@ def test_http_request():
     session.goto('http_headers.path')
     assert session.test_case.request.mutant.name == 'path'
 
-    for i in range(10):
+    for _ in range(10):
         # print('TC', session.test_case.id)
         session.run_next()
         # print('TC', session.test_case.id)
         if len(session.suspects) > 0:
             break
 
-    assert [tc for tc in session.suspects.values()][0].request.mutant.name == 'path'
+    assert list(session.suspects.values())[0].request.mutant.name == 'path'
 
     print('Restart MOCK server')
     # Next test, will test the monitor
@@ -59,13 +59,13 @@ def test_http_request():
     assert session.test_case.request.variables['token'] is not None
     assert len(session.disabled_elements) == 0
 
-    for i in range(10):
+    for _ in range(10):
         # print('TC', session.test_case.id)
         session.run_next()
         # print('TC', session.test_case.id)
         if len(session.suspects) > 1:
             break
-    assert [tc for tc in session.suspects.values()][-1].mutant_name == 'param_op_value'
+    assert list(session.suspects.values())[-1].mutant_name == 'param_op_value'
     print(session.suspects)
 
 

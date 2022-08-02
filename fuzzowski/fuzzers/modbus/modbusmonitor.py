@@ -7,8 +7,7 @@ SlaveID = 1 # Modbus TCP Unit Identifier: 1..247
 
 # ----------------- Device ID to bytes -------------------------- #
 def bitDeviceID(DeviceID):
-    bytes_id = (DeviceID).to_bytes((DeviceID.bit_length() + 7) // 8, byteorder='big')
-    return bytes_id
+    return (DeviceID).to_bytes((DeviceID.bit_length() + 7) // 8, byteorder='big')
 
 HexSlaveID = bitDeviceID(SlaveID)
 
@@ -52,8 +51,7 @@ class modbusMonitor(IMonitor):
 
     def test(self):
         conn = self.get_connection_copy()
-        result = self._get_modbus_info(conn)
-        return result
+        return self._get_modbus_info(conn)
 
 
     def _get_modbus_info(self, conn: ITargetConnection):
@@ -71,15 +69,18 @@ class modbusMonitor(IMonitor):
 
                 if data[5] > 0 and Unit_ID == HexSlaveID:
                     if hex(Func_code) == '0x11':
-                      self.logger.log_info(f"Getting MODBUS device information succeeded")
+                        self.logger.log_info("Getting MODBUS device information succeeded")
                     elif hex(Exception_code) == '0xb': # more details needed? and (hex(Func_code) == '0x91' or hex(Func_code) == '0x84')
-                      self.logger.log_warn(f"Getting MODBUS device information: Gateway target device failed to respond")
+                        self.logger.log_warn(
+                            "Getting MODBUS device information: Gateway target device failed to respond"
+                        )
+
                     elif hex(Exception_code) == '0x1':
-                      self.logger.log_warn(f"Getting MODBUS device information: Illegal function")
+                        self.logger.log_warn("Getting MODBUS device information: Illegal function")
                     else:
-                      self.logger.log_warn(f"Getting MODBUS device information warning")
+                        self.logger.log_warn("Getting MODBUS device information warning")
                 else:
-                  self.logger.log_warn(f"Getting MODBUS data error")
+                    self.logger.log_warn("Getting MODBUS data error")
 
                 result = True
         except Exception as e:

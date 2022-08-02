@@ -23,8 +23,7 @@ def test_session():
     s_initialize('r2')
     s_initialize('r2b')
 
-    s = Session()
-    return s
+    return Session()
 
 
 def test_graph(test_session):

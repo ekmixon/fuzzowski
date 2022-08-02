@@ -99,41 +99,42 @@ class SessionPrompt(CommandPrompt):
         host = self.session.target.target_connection.host
         port = str(self.session.target.target_connection.port)
 
-        return HTML('[<testn>{} of {}</testn>] '
-                    '<b>➜</b> <host>{}</host>:<port>{}</port> $ '
-                    .format(self.session.mutant_index, self.session.total_mutations, host, port))
+        return HTML(
+            f'[<testn>{self.session.mutant_index} of {self.session.total_mutations}</testn>] <b>➜</b> <host>{host}</host>:<port>{port}</port> $ '
+        )
 
     # --------------------------------------------------------------- #
 
     def bottom_toolbar(self):
-        if self.session.test_case is not None:
-            toolbar_message = HTML(f'Test Case [<bttestn>{self.session.mutant_index}</bttestn>] '
-                                   f'of [<bttestn>{self.session.total_mutations}</bttestn>]'
-                                   f': Fuzzing Path <bttestn>{self.session.test_case.path_name}</bttestn> '
-                                   f' Mutant <bttestn>{self.session.test_case.short_name}</bttestn>')
-        else:
-            toolbar_message = HTML(f'Test Case [<bttestn>{self.session.mutant_index}</bttestn>] '
-                                   f'of [<bttestn>{self.session.total_mutations}</bttestn>]')
-
-        return toolbar_message
+        return (
+            HTML(
+                f'Test Case [<bttestn>{self.session.mutant_index}</bttestn>] '
+                f'of [<bttestn>{self.session.total_mutations}</bttestn>]'
+                f': Fuzzing Path <bttestn>{self.session.test_case.path_name}</bttestn> '
+                f' Mutant <bttestn>{self.session.test_case.short_name}</bttestn>'
+            )
+            if self.session.test_case is not None
+            else HTML(
+                f'Test Case [<bttestn>{self.session.mutant_index}</bttestn>] '
+                f'of [<bttestn>{self.session.total_mutations}</bttestn>]'
+            )
+        )
 
     # --------------------------------------------------------------- #
 
     def handle_break(self, tokens: list) -> bool:
-        if tokens[0] in ('c', 'continue'):
-            self.session.is_paused = False
-            self.session.run_all()
-            return True
-        else:
+        if tokens[0] not in ('c', 'continue'):
             return False
+        self.session.is_paused = False
+        self.session.run_all()
+        return True
 
     # --------------------------------------------------------------- #
 
     def handle_exit(self, tokens: list) -> None:
-        if len(tokens) > 0:
-            if tokens[0] in ('exit', 'quit', 'q'):
-                self.session.export_file()
-                sys.exit(0)
+        if tokens and tokens[0] in ('exit', 'quit', 'q'):
+            self.session.export_file()
+            sys.exit(0)
 
     # --------------------------------------------------------------- #
 
@@ -314,10 +315,7 @@ class SessionPrompt(CommandPrompt):
             test_case_index = int(tokens[0])
             suspect = self.session.suspects.pop(test_case_index)
             print(f'Removing {suspect} from suspects')
-        except IndexError:  # No index specified, Show all suspects
-            self._print_error('delsuspect usage: delsuspect TEST_ID')
-            return
-        except ValueError:
+        except (IndexError, ValueError):  # No index specified, Show all suspects
             self._print_error('delsuspect usage: delsuspect TEST_ID')
             return
         except KeyError:
@@ -375,10 +373,7 @@ class SessionPrompt(CommandPrompt):
     def _cmd_addcrash(self, tokens):
         try:
             test_case_index = int(tokens[0])
-        except IndexError:  # No index specified, Show crashes?
-            self._print_error('Usage: crash [TEST_ID]')
-            return
-        except ValueError:
+        except (IndexError, ValueError):  # No index specified, Show crashes?
             self._print_error('Usage: crash [TEST_ID]')
             return
         session_state = self.session.save_session_state()

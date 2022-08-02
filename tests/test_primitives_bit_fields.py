@@ -36,8 +36,12 @@ def test_bit_field_big():
 def test_bit_fields_big_endian(test_bit_field_big):
     assert test_bit_field_big.render() == test_bit_field_big.original_value
 
-    assert test_bit_field_big.num_mutations == len([x for x in test_bit_field_big]) \
-                                            == len([x for x in test_bit_field_big.mutation_generator(0)])
+    assert (
+        test_bit_field_big.num_mutations
+        == len(list(test_bit_field_big))
+        == len(list(test_bit_field_big.mutation_generator(0)))
+    )
+
 
     gen = test_bit_field_big.mutation_generator(0)
     assert next(gen) == b'\x00\x00'
@@ -67,12 +71,12 @@ def test_bit_fields_reset():
     actual_value = next(gen)
     assert b.render() == b'\x00\x00' == actual_value
 
-    assert [x for x in b] == [b'\x00\x00', b'\x00\x01', b'\x00\xff', b'\xff\xff']
+    assert list(b) == [b'\x00\x00', b'\x00\x01', b'\x00\xff', b'\xff\xff']
 
 
 def test_bit_field_ascii():
     b = BitField(30, width=16, endian=BIG_ENDIAN, output_format='ascii', mutations=[0, 1, 255, 0xffff])
-    assert [x for x in b] == [b'0', b'1', b'255', b'65535']
+    assert list(b) == [b'0', b'1', b'255', b'65535']
 
 
 @pytest.mark.parametrize("value, rendered", [

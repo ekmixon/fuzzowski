@@ -20,6 +20,6 @@ class DWord(BitField):
         aux_value = value
         if type(aux_value) not in [int, list, tuple]:
             assert len(aux_value) == 4, "Word value length must be 4!"
-            aux_value = struct.unpack(LITTLE_ENDIAN + "L", aux_value)[0]
+            aux_value = struct.unpack(f"{LITTLE_ENDIAN}L", aux_value)[0]
 
         super(DWord, self).__init__(aux_value, width, max_num, *args, **kwargs)

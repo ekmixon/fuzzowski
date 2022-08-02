@@ -58,8 +58,7 @@ class IPPMon(IMonitor):
 
     def test(self) -> bool:
         conn = self.get_connection_copy()
-        result = self._get_ipp_attribs(conn)
-        return result
+        return self._get_ipp_attribs(conn)
 
     def _get_ipp_attribs(self, conn: ITargetConnection):
         try:
@@ -71,7 +70,7 @@ class IPPMon(IMonitor):
                 self.logger.log_error("Get Printer Attributes Failed!!")
                 result = False
             else:
-                self.logger.log_info(f"Get Printer Attributes succeeded")
+                self.logger.log_info("Get Printer Attributes succeeded")
                 result = True
         except Exception as e:
             self.logger.log_error(f"Get Printer Attributes Failed!! Exception while receiving: {type(e).__name__}. {str(e)}")

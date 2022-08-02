@@ -4,7 +4,7 @@ from .edge import Edge
 
 class Graph(object):
     def __init__(self):
-        self.graph_dict: Dict[Any, List] = dict()
+        self.graph_dict: Dict[Any, List] = {}
         self.root = '_root_'
         self.graph_dict[self.root] = []
 
@@ -40,14 +40,12 @@ class Graph(object):
 
         Returns: True if an Edge(src, dst) exists in the graph
         """
-        if src not in self.graph_dict:
-            return False
-        else:
+        if src in self.graph_dict:
             edges = self.graph_dict[src]
             for edge in edges:
                 if edge.src == src and edge.dst == dst:
                     return True
-            return False
+        return False
 
     def edges_from(self, src: object) -> List[Edge]:
         """

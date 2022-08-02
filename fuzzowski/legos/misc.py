@@ -33,11 +33,7 @@ class DNSHostname(blocks.Block):
         # let the parent do the initial render.
         blocks.Block.render(self)
 
-        new_str = ""
-
-        # replace dots (.) with the substring length.
-        for part in self._rendered.split("."):
-            new_str += str(len(part)) + part
+        new_str = "".join(str(len(part)) + part for part in self._rendered.split("."))
 
         # be sure to null terminate too.
         self._rendered = new_str + "\x00"

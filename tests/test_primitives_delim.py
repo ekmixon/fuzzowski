@@ -20,7 +20,7 @@ def test_delim1(test_delim):
     assert test_delim.original_value != next_mutation
     assert next_mutation == test_delim.render()
 
-    all_mutations = [x for x in test_delim]
+    all_mutations = list(test_delim)
     assert len(test_delim._mutations) == len(all_mutations)
 
     assert b':' * 100 in all_mutations

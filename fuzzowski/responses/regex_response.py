@@ -9,7 +9,7 @@ class RegexResponse(Response):
     def __init__(self, name: str, required_vars: List[str], optional_vars: List[str], regex_list: List[bytes],
                  regex_args: List = ()):
         super().__init__(name, required_vars, optional_vars)
-        assert len(regex_list) > 0
+        assert regex_list
         self.regex_list = []
         regex_keys = []
         for regex in regex_list:
@@ -17,7 +17,7 @@ class RegexResponse(Response):
             compiled_regex = re.compile(regex, *regex_args)
             self.regex_list.append(compiled_regex)
             regex_keys.extend(compiled_regex.groupindex.keys())
-        if len(set(regex_keys).difference(self.required_vars + self.optional_vars)) != 0:
+        if set(regex_keys).difference(self.required_vars + self.optional_vars):
             raise FuzzowskiRuntimeError("There are differences between the variables of the regex list and the declared"
                                         "optional and required vars. It must coincide!")
 

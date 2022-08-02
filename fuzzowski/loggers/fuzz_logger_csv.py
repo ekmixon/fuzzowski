@@ -22,8 +22,7 @@ DEFAULT_HEX_TO_STR = hex_to_hexstr
 
 
 def get_time_stamp():
-    s = datetime.datetime.utcnow().isoformat()
-    return s
+    return datetime.datetime.utcnow().isoformat()
 
 
 class FuzzLoggerCsv(ifuzz_logger_backend.IFuzzLoggerBackend):
@@ -61,7 +60,9 @@ class FuzzLoggerCsv(ifuzz_logger_backend.IFuzzLoggerBackend):
         self._print_log_msg(["info", "", "", description])
 
     def open_test_case(self, test_case_id, name, index, *args, **kwargs):
-        self._print_log_msg(["open test case", "", "", "Test case " + str(test_case_id)])
+        self._print_log_msg(
+            ["open test case", "", "", f"Test case {str(test_case_id)}"]
+        )
 
     def log_fail(self, description=""):
         self._print_log_msg(["fail", "", "", description])

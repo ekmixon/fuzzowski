@@ -43,9 +43,7 @@ class FuzzLoggerFile(IFuzzLogger):
         try:
             os.makedirs(self._path)
         except OSError as exc:
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
+            if exc.errno != errno.EEXIST or not os.path.isdir(path):
                 raise
 
     def open_test_case(self, test_case_id, name, index, *args, **kwargs):

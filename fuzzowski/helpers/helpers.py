@@ -93,14 +93,14 @@ test_step_info = {
 
 def color_html(data, msg_type):
     if msg_type in constants.STYLE:
-        return HTML('<{}>{}</{}>'.format(msg_type, data, msg_type))
+        return HTML(f'<{msg_type}>{data}</{msg_type}>')
     else:
         return HTML(data)
 
 
 def color_formatted_text(data, msg_type):
     if msg_type in constants.STYLE:
-        return FormattedText([('class:{}'.format(msg_type), data)])
+        return FormattedText([(f'class:{msg_type}', data)])
     else:
         return FormattedText([('', data)])
 
@@ -141,7 +141,7 @@ def get_max_udp_size():
     elif linux or mac:
         if mac:
             lib = ctypes.cdll.LoadLibrary('libc.dylib')
-        elif linux:
+        else:
             lib = ctypes.cdll.LoadLibrary('libc.so.6')
         sol_socket = ctypes.c_int(socket.SOL_SOCKET)
         opt = ctypes.c_int(socket.SO_SNDBUF)
@@ -275,7 +275,7 @@ def ipv4_checksum(msg: bytes):
     if len(msg) % 2 == 1:
         msg += b"\x00"
 
-    msg_words = map(_collate_bytes, msg[0::2], msg[1::2])
+    msg_words = map(_collate_bytes, msg[::2], msg[1::2])
     total = reduce(_ones_complement_sum_carry_16, msg_words, 0)
     return ~total & 0xffff
 
@@ -329,7 +329,7 @@ def udp_checksum(msg: bytes, src_addr: bytes, dst_addr: bytes):
     # If the packet is too big, the checksum is undefined since len(msg)
     # won't fit into two bytes. So we just pick our best definition.
     # "Truncate" the message as it appears in the checksum.
-    msg = msg[0:ip_constants.UDP_MAX_LENGTH_THEORETICAL]
+    msg = msg[:ip_constants.UDP_MAX_LENGTH_THEORETICAL]
 
     return ipv4_checksum(
         _udp_checksum_pseudo_header(src_addr, dst_addr, len(msg)) +
@@ -403,7 +403,7 @@ def format_log_msg(msg_type, description=None, data=None, indent_size=2, timesta
 
     msg = test_step_info[msg_type][format_type].format(msg=msg, n=len(data))
     msg = _indent_all_lines(msg, (test_step_info[msg_type]['indent']) * indent_size)
-    msg = timestamp + ' ' + _indent_after_first_line(msg, len(timestamp) + 1)
+    msg = f'{timestamp} {_indent_after_first_line(msg, len(timestamp) + 1)}'
 
     return msg
 
@@ -412,7 +412,7 @@ def format_msg(msg, indent_level, indent_size, timestamp=None):
     msg = _indent_all_lines(msg, indent_level * indent_size)
     if timestamp is None:
         timestamp = get_time_stamp()
-    return timestamp + ' ' + _indent_after_first_line(msg, len(timestamp) + 1)
+    return f'{timestamp} {_indent_after_first_line(msg, len(timestamp) + 1)}'
 
 
 def hex_to_hexstr(input_bytes):
@@ -426,18 +426,18 @@ def hex_to_hexstr(input_bytes):
     Returns:
         str: Printable string
     """
-    return hex_str(input_bytes) + " " + repr(input_bytes)
+    return f"{hex_str(input_bytes)} {repr(input_bytes)}"
 
 def repr_input_bytes(input_bytes):
     if len(input_bytes) > 10000:
-        return '[{} bytes]'.format(len(input_bytes))
+        return f'[{len(input_bytes)} bytes]'
     groups = groupby(input_bytes)
     result = [(label, sum(1 for _ in group)) for label, group in groups]
     b = b''
     hexb = ''
     for c, i in result:
         if i > 10:
-            b += '[{}*{}] '.format(chr(c), i).encode()
+            b += f'[{chr(c)}*{i}] '.encode()
             hexb += '[{:02x}*{}] '.format(c, i)
         else:
             b += bytes([c]*i)

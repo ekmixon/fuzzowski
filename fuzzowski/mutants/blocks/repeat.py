@@ -52,8 +52,9 @@ class Repeat(Mutant):
         if self.variable and not isinstance(self.variable, BitField):
             print(self.variable)
             raise FuzzowskiRuntimeError(
-                "Attempt to bind the repeater for block %s to a non-integer primitive!" % self.block_name
+                f"Attempt to bind the repeater for block {self.block_name} to a non-integer primitive!"
             )
+
 
         # ensure the user specified either a variable to tie this repeater to or a min/max val.
         if self.variable is None and self.max_reps is None:
@@ -81,11 +82,9 @@ class Repeat(Mutant):
             # If the variable is set, it will repeat variable times
             if self.variable:
                 num_repeats = max(0, self.variable._value - 1) if self.include else self.variable._value
-                self._value = num_repeats * self.block.render()
             else:
                 num_repeats = self._value  # Mutate will take self._mutations[self.mutant_index]
-                self._value = num_repeats * self.block.render()
-
+            self._value = num_repeats * self.block.render()
         return ret_value
 
     def render(self, replace_node: str = None, replace_value: bytes = None, original: bool = False) -> bytes:
@@ -94,7 +93,7 @@ class Repeat(Mutant):
         """
         if replace_node is not None and replace_value is not None and replace_node == self.name:
             self._rendered = replace_value
-        elif original is True:
+        elif original:
             self._rendered = self._original_value
         elif self.variable:
             num_repeats = max(0, self.variable._value - 1) if self.include else self.variable._value

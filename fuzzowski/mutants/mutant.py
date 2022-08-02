@@ -33,10 +33,7 @@ class Mutant(IMutant):
         self._original_value = value  # original value of primitive.
 
         # These 3 values are set by reset() to these values
-        if self._fuzzable:
-            self._fuzz_complete = False  # this flag is raised when the mutations are exhausted
-        else:
-            self._fuzz_complete = True
+        self._fuzz_complete = not self._fuzzable
         self._value = self._original_value  # current value of primitive.
         self._mutant_index = 0  # current mutation index into the fuzz library.
 
@@ -102,10 +99,7 @@ class Mutant(IMutant):
         Resets the mutant to the original state
         Returns: None
         """
-        if self._fuzzable:
-            self._fuzz_complete = False  # this flag is raised when the mutations are exhausted
-        else:
-            self._fuzz_complete = True
+        self._fuzz_complete = not self._fuzzable
         self._mutant_index = 0  # current mutation index into the fuzz library.
         self._value = self._original_value  # current value of primitive.
 
@@ -160,7 +154,7 @@ class Mutant(IMutant):
         """
         if replace_node is not None and replace_value is not None and replace_node == self.name:
             self._rendered = replace_value
-        elif original is True:
+        elif original:
             self._rendered = self._original_value
         else:
             self._rendered = self._render(self._value)
@@ -177,8 +171,4 @@ class Mutant(IMutant):
         Returns:
             bytes: Rendered value
         """
-        if isinstance(value, bytes):
-            _rendered = value
-        else:
-            _rendered = value.encode()  # render always to bytes
-        return _rendered
+        return value if isinstance(value, bytes) else value.encode()

@@ -148,17 +148,14 @@ def test_request_movements():
 
     request = s_get('request_test_complex2')
 
-    i=0
-    for mutation in request:
-        i+=1
+    for i, mutation in enumerate(request, start=1):
         assert request.mutant_index == i
         assert request.mutant.mutant_index != 0
         for item in request.stack:
-            if item != request.mutant:
-                if not isinstance(item, blocks.Block):
-                    assert item.mutant_index == 0
-            else:
+            if item == request.mutant:
                 assert item.mutant_index != 0
 
+            elif not isinstance(item, blocks.Block):
+                assert item.mutant_index == 0
     for item in request.stack:
         assert item.mutant_index == 0

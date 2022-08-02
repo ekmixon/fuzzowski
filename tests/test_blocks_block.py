@@ -89,7 +89,7 @@ def test_block_mutations(test_block):
 
     test_block.goto(6)
     assert test_block.render() == b'x 3'
-    assert [x for x in test_block.mutation_generator(6)] == []  # Last mutation
+    assert not list(test_block.mutation_generator(6))
     assert test_block.request.mutant is None
     assert test_block.mutant_index == 0
 

@@ -40,10 +40,7 @@ def bytes_to_string(b: bytes) -> str:
     Returns:
         str: String
     """
-    rendered = ''
-    for i in b:
-        rendered += chr(i)
-    return rendered
+    return ''.join(chr(i) for i in b)
 
 
 def string_to_bytes(s: str) -> bytes:
@@ -56,9 +53,7 @@ def string_to_bytes(s: str) -> bytes:
     Returns:
         bytes: Bytes
     """
-    b_list = []
-    for c in s:
-        b_list.append(ord(c))
+    b_list = [ord(c) for c in s]
     return bytes(b_list)
 
 
@@ -86,7 +81,11 @@ class BitField(Mutant):
 
         assert isinstance(value, (int,)), "value must be an integer!"
         assert isinstance(width, (int,)), "width must be an integer!"
-        assert output_format in ("binary", "ascii"), "output_format must be 'binary' or 'ascii'!"
+        assert output_format in {
+            "binary",
+            "ascii",
+        }, "output_format must be 'binary' or 'ascii'!"
+
 
         self._value = value
         # I have deleted the possibility of setting a bit field with bytes
@@ -111,19 +110,17 @@ class BitField(Mutant):
 
         if self.full_range:
             # add all possible values.
-            for i in range(0, self.max_num):
-                self._mutations.append(i)
-        else:
-            if len(mutations) == 0:
-                # try only "smart" values.
-                self.add_integer_boundaries(0)
-                self.add_integer_boundaries(self.max_num // 2)
-                self.add_integer_boundaries(self.max_num // 3)
-                self.add_integer_boundaries(self.max_num // 4)
-                self.add_integer_boundaries(self.max_num // 8)
-                self.add_integer_boundaries(self.max_num // 16)
-                self.add_integer_boundaries(self.max_num // 32)
-                self.add_integer_boundaries(self.max_num)
+            self._mutations.extend(iter(range(self.max_num)))
+        elif len(mutations) == 0:
+            # try only "smart" values.
+            self.add_integer_boundaries(0)
+            self.add_integer_boundaries(self.max_num // 2)
+            self.add_integer_boundaries(self.max_num // 3)
+            self.add_integer_boundaries(self.max_num // 4)
+            self.add_integer_boundaries(self.max_num // 8)
+            self.add_integer_boundaries(self.max_num // 16)
+            self.add_integer_boundaries(self.max_num // 32)
+            self.add_integer_boundaries(self.max_num)
 
             # TODO: Add injectable arbitrary bit fields
 
@@ -141,9 +138,8 @@ class BitField(Mutant):
         for i in range(-10, 10):
             case = integer + i
             # ensure the border case falls within the valid range for this field.
-            if 0 <= case < self.max_num:
-                if case not in self._mutations:
-                    self._mutations.append(case)
+            if 0 <= case < self.max_num and case not in self._mutations:
+                self._mutations.append(case)
 
     def _render(self, value: int):
         # TODO: Fix UnicodeDecodeError while rendering int.
@@ -169,16 +165,9 @@ class BitField(Mutant):
             str: value converted to a byte string
         """
         if output_format == "binary":
-            bit_stream = ""
+            bit_stream = "0" * (8 - (bit_width % 8)) if bit_width % 8 != 0 else ""
+            bit_stream += int_to_binary_string(value, bit_width)
             rendered = b""
-
-            # pad the bit stream to the next byte boundary.
-            if bit_width % 8 == 0:
-                bit_stream += int_to_binary_string(value, bit_width)
-            else:
-                bit_stream = "0" * (8 - (bit_width % 8))
-                bit_stream += int_to_binary_string(value, bit_width)
-
             # convert the bit stream from a string of bits into raw bytes.
             for i in range(len(bit_stream) // 8):
                 chunk_min = 8 * i
@@ -195,34 +184,27 @@ class BitField(Mutant):
                 rendered = bytes(bytes_list)
 
             _rendered = rendered
+        elif signed and int_to_binary_string(value, bit_width)[0] == "1":
+            max_num = binary_string_to_int("1" + "0" * (bit_width - 1))
+            # chop off the sign bit.
+            val = value & binary_string_to_int("1" * (bit_width - 1))
+
+            # account for the fact that the negative scale works backwards.
+            val = max_num - val - 1
+
+            # toss in the negative sign.
+            _rendered = "%d" % ~val
+
         else:
-            # Otherwise we have ascii/something else
-            # if the sign flag is raised and we are dealing with a signed integer (first bit is 1).
-            if signed and int_to_binary_string(value, bit_width)[0] == "1":
-                max_num = binary_string_to_int("1" + "0" * (bit_width - 1))
-                # chop off the sign bit.
-                val = value & binary_string_to_int("1" * (bit_width - 1))
-
-                # account for the fact that the negative scale works backwards.
-                val = max_num - val - 1
-
-                # toss in the negative sign.
-                _rendered = "%d" % ~val
-
-            # unsigned integer or positive signed integer.
-            else:
-                _rendered = "%d" % value
+            _rendered = "%d" % value
         if isinstance(_rendered, str):
             _rendered = _rendered.encode()
         return _rendered
 
     def __len__(self):
-        if self.format == "binary":
-            return self.width / 8
-        else:
-            return len(str(self._value))
+        return self.width / 8 if self.format == "binary" else len(str(self._value))
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.render())
+        return f'<{self.__class__.__name__} {self.render()}>'
 
 

@@ -26,8 +26,6 @@ def test_string_original_value(test_string):
     assert test_string.original_value == b'Test'
 
 def test_string_reset(test_string):
-    for x in test_string:
-        pass
     assert test_string.render() == test_string.original_value == b'Test'
 
 def test_string_filename(tmpdir, test_string):

@@ -28,10 +28,13 @@ class String(blocks.Block):
         if not self.value:
             raise exception.FuzzowskiRuntimeError("MISSING LEGO.ber_string DEFAULT VALUE")
 
-        str_block = blocks.Block(name + "_STR", request)
+        str_block = blocks.Block(f"{name}_STR", request)
         str_block.push(primitives.String(self.value))
 
-        self.push(blocks.Size(name + "_STR", request, endian=BIG_ENDIAN, fuzzable=True))
+        self.push(
+            blocks.Size(f"{name}_STR", request, endian=BIG_ENDIAN, fuzzable=True)
+        )
+
         self.push(str_block)
 
     def render(self, replace_node=None, replace_value=None, original=False):

@@ -36,8 +36,7 @@ class BACnetMonitor(IMonitor):
 
     def test(self):
         conn = self.get_connection_copy()
-        result = self._get_bacnet_info(conn)
-        return result
+        return self._get_bacnet_info(conn)
 
     def _get_bacnet_info(self, conn: ITargetConnection):
         try:
@@ -50,9 +49,9 @@ class BACnetMonitor(IMonitor):
             else:
                 # validate valid BACNet Packet and verify that the response APDU was not an error packet
                 if hex(data[0]) == '0x81' and hex(data[1]) == '0xa' and hex(data[6]) != '0x50':
-                  self.logger.log_info(f"Getting BACnet device information succeeded")
+                    self.logger.log_info("Getting BACnet device information succeeded")
                 else:
-                  self.logger.log_warn(f"Getting BACnet error response in the APDU")
+                    self.logger.log_warn("Getting BACnet error response in the APDU")
                 result = True
         except Exception as e:
             self.logger.log_error(f"BACnet error response, getting BACnet device information Failed!! Exception while receiving: {type(e).__name__}. {str(e)}")

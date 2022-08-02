@@ -34,10 +34,10 @@ class CommandCompleter(Completer):
         commands = {}
         # get the stuff we have typed so far
         before_cursor = document.get_word_before_cursor()
-        commands.update(self.find_completions(document))
+        commands |= self.find_completions(document)
 
         # if there are commands, show them
-        if len(commands) > 0:
+        if commands:
             commands = collections.OrderedDict(sorted(list(commands.items()), key=lambda t: t[0]))
             for cmd, extra in commands.items():
                 desc = extra['desc'] if type(extra) is dict and 'desc' in extra else None

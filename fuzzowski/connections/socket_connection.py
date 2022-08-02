@@ -93,7 +93,10 @@ class SocketConnection(ITargetConnection):
         self._sock = None
 
         if self.proto not in self._PROTOCOLS:
-            raise exception.FuzzowskiRuntimeError("INVALID PROTOCOL SPECIFIED: %s" % self.proto)
+            raise exception.FuzzowskiRuntimeError(
+                f"INVALID PROTOCOL SPECIFIED: {self.proto}"
+            )
+
 
         if self.proto in self._PROTOCOLS_PORT_REQUIRED and self.port is None:
             raise ValueError("__init__() argument port required for protocol {0}".format(self.proto))
@@ -115,7 +118,7 @@ class SocketConnection(ITargetConnection):
             None
         """
         # Create socket
-        if self.proto == "tcp" or self.proto == "ssl":
+        if self.proto in ["tcp", "ssl"]:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         elif self.proto == "udp":
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -128,13 +131,16 @@ class SocketConnection(ITargetConnection):
         elif self.proto == "raw-l3":
             self._sock = socket.socket(socket.AF_PACKET, socket.SOCK_DGRAM)
         else:
-            raise exception.FuzzowskiRuntimeError("INVALID PROTOCOL SPECIFIED: %s" % self.proto)
+            raise exception.FuzzowskiRuntimeError(
+                f"INVALID PROTOCOL SPECIFIED: {self.proto}"
+            )
+
 
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDTIMEO, _seconds_to_second_microsecond_struct(self._send_timeout))
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, _seconds_to_second_microsecond_struct(self._recv_timeout))
 
         # Connect is needed only for TCP protocols
-        if self.proto == "tcp" or self.proto == "ssl":
+        if self.proto in ["tcp", "ssl"]:
             try:
                 self._sock.settimeout(self._recv_timeout)
                 self._sock.connect((self.host, self.port))
@@ -184,7 +190,10 @@ class SocketConnection(ITargetConnection):
                 # dump everything off the interface anyway, which is probably not what the user wants.
                 data = b''
             else:
-                raise exception.FuzzowskiRuntimeError("INVALID PROTOCOL SPECIFIED: %s" % self.proto)
+                raise exception.FuzzowskiRuntimeError(
+                    f"INVALID PROTOCOL SPECIFIED: {self.proto}"
+                )
+
         except socket.timeout:
             data = b''
             # raise exception.FuzzowskiTargetRecvTimeout()
@@ -192,12 +201,10 @@ class SocketConnection(ITargetConnection):
             if e.errno == errno.ECONNABORTED:
                 # raise(exception.FuzzowskiTargetConnectionAborted(socket_errno=e.errno, socket_errmsg=e.strerror), None, sys.exc_info()[2])
                 raise exception.FuzzowskiTargetConnectionAborted(socket_errno=e.errno, socket_errmsg=e.strerror)  # .with_traceback(sys.exc_info()[2])
-            elif (e.errno == errno.ECONNRESET) or \
-                    (e.errno == errno.ENETRESET) or \
-                    (e.errno == errno.ETIMEDOUT):
+            elif e.errno in [errno.ECONNRESET, errno.ENETRESET, errno.ETIMEDOUT]:
                 # raise(exception.FuzzowskiTargetConnectionReset, None, sys.exc_info()[2])
                 raise exception.FuzzowskiTargetConnectionReset  # .with_traceback(sys.exc_info()[2])
-            elif e.errno == errno.EWOULDBLOCK or e.errno == errno.EAGAIN:  # timeout condition if using SO_RCVTIMEO or SO_SNDTIMEO
+            elif e.errno in [errno.EWOULDBLOCK, errno.EAGAIN]:  # timeout condition if using SO_RCVTIMEO or SO_SNDTIMEO
                 # raise exception.FuzzowskiTargetRecvTimeout()
                 data = b''
             else:
@@ -245,21 +252,25 @@ class SocketConnection(ITargetConnection):
                 # See man 7 packet for more details.
                 num_sent = self._sock.sendto(data, (self.host, self.ethernet_proto, 0, 0, self.l2_dst))
             else:
-                raise exception.FuzzowskiRuntimeError("INVALID PROTOCOL SPECIFIED: %s" % self.proto)
+                raise exception.FuzzowskiRuntimeError(
+                    f"INVALID PROTOCOL SPECIFIED: {self.proto}"
+                )
+
         except socket.error as e:
             if e.errno == errno.ECONNABORTED:
                 raise(exception.FuzzowskiTargetConnectionAborted(socket_errno=e.errno, socket_errmsg=e.strerror),
                        None, sys.exc_info()[2])
-            elif (e.errno == errno.ECONNRESET) or \
-                    (e.errno == errno.ENETRESET) or \
-                    (e.errno == errno.ETIMEDOUT) or \
-                    (e.errno == errno.EPIPE):
+            elif e.errno in [
+                errno.ECONNRESET,
+                errno.ENETRESET,
+                errno.ETIMEDOUT,
+                errno.EPIPE,
+            ]:
                 raise(exception.FuzzowskiTargetConnectionReset(None, sys.exc_info()[2]))
                 # raise(exception.FuzzowskiTargetConnectionReset, None, sys.exc_info()[2])
             else:
                 raise
-        # TODO: OSError:
-        except (Exception, OSError) as e:
+        except Exception as e:
             raise(exception.FuzzowskiTargetConnectionAborted(socket_errno=e.errno, socket_errmsg=e.strerror),
                    None, sys.exc_info()[2])
         return num_sent
@@ -269,16 +280,17 @@ class SocketConnection(ITargetConnection):
         return '{0}:{1}'.format(self.host, self.port)
 
     def __deepcopy__(self, memo):
-        new_socket = SocketConnection(self.host,
-                                      port=self.port,
-                                      proto=self.proto,
-                                      bind=self.bind,
-                                      send_timeout=self._send_timeout,
-                                      recv_timeout=self._recv_timeout,
-                                      ethernet_proto=self.ethernet_proto,
-                                      l2_dst=self.l2_dst,
-                                      udp_broadcast=self._udp_broadcast)
-        return new_socket
+        return SocketConnection(
+            self.host,
+            port=self.port,
+            proto=self.proto,
+            bind=self.bind,
+            send_timeout=self._send_timeout,
+            recv_timeout=self._recv_timeout,
+            ethernet_proto=self.ethernet_proto,
+            l2_dst=self.l2_dst,
+            udp_broadcast=self._udp_broadcast,
+        )
 
 
 

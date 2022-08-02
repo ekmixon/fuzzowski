@@ -186,9 +186,9 @@ class IPP(IFuzzer):
         # ================================================================#
 
         s_initialize("print_uri_message")
-        s_static("POST {} HTTP/1.1\r\n".format(path).encode())
+        s_static(f"POST {path} HTTP/1.1\r\n".encode())
         if host is not None:
-            s_static("Host: {}".format(host).encode())
+            s_static(f"Host: {host}".encode())
             if port is not None:
                 s_static(b':')
                 s_static(str(port).encode())
@@ -575,15 +575,16 @@ class IPP(IFuzzer):
         logger.log_info('Callback set_job_id')
         # target.close()
         # target.open()
-        job_id = session.last_recv[session.last_recv.find(b'job-id'):][8:][0:4]  # Extract job-id
+        job_id = session.last_recv[session.last_recv.find(b'job-id'):][8:][:4]
         job_id_int = int.from_bytes(job_id, byteorder='big')
 
-        logger.log_info('job-id found: {} = {}'.format(job_id, job_id_int))
+        logger.log_info(f'job-id found: {job_id} = {job_id_int}')
 
-        data = node.render(replace_node='jobid_p_val', replace_value=job_id, original=original)
         # logger.log_info(data)
         #return None
-        return data
+        return node.render(
+            replace_node='jobid_p_val', replace_value=job_id, original=original
+        )
 
     @staticmethod
     def send_uri(session: Session) -> None:

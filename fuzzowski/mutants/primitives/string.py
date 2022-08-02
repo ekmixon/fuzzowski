@@ -272,9 +272,7 @@ class String(Mutant):
         """
 
         self.size = size
-        self.max_len = max_len
-        if self.size > -1:
-            self.max_len = self.size
+        self.max_len = self.size if self.size > -1 else max_len
         self.padding = padding
         self.encoding = encoding
         self._fuzzable = fuzzable
@@ -341,7 +339,7 @@ class String(Mutant):
             for length in [128, 256, 1024, 2048, 4096, 32767, 0xFFFF]:
                 s = "D" * length
                 # Number of null bytes to insert (random)
-                for i in range(random.randint(1, 10)):
+                for _ in range(random.randint(1, 10)):
                     # Location of random byte
                     loc = random.randint(1, len(s))
                     s = s[:loc] + "\x00" + s[loc:]
@@ -387,14 +385,20 @@ class String(Mutant):
         """
         strings = []
         for size in [128, 256, 512, 1024, 2048, 4096, 32768, 0xFFFF]:
-            strings.append(sequence * (size - 2))
-            strings.append(sequence * (size - 1))
-            strings.append(sequence * size)
-            strings.append(sequence * (size + 1))
-            strings.append(sequence * (size + 2))
+            strings.extend(
+                (
+                    sequence * (size - 2),
+                    sequence * (size - 1),
+                    sequence * size,
+                    sequence * (size + 1),
+                    sequence * (size + 2),
+                )
+            )
 
-        for size in [5000, 10000, 20000, 99999, 100000, 500000, 1000000]:
-            strings.append(sequence * size)
+        strings.extend(
+            sequence * size
+            for size in [5000, 10000, 20000, 99999, 100000, 500000, 1000000]
+        )
 
         for string in strings:
             self._generic_long_mutations.append(string)
@@ -455,10 +459,7 @@ class String(Mutant):
             value += self.padding * (self.size - len(value))
 
         try:
-            if isinstance(value, bytes):
-                _rendered = value
-            else:
-                _rendered = value.encode(self.encoding)
+            _rendered = value if isinstance(value, bytes) else value.encode(self.encoding)
         except UnicodeDecodeError:
             # If we can't decode the string, just treat it like a plain byte string
             _rendered = value

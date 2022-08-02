@@ -12,7 +12,7 @@ class Response(object, metaclass=ABCMeta):
         self.name = name
         self.required_vars = required_vars
         self.optional_vars = optional_vars
-        self.vars: Mapping[str, bytes] = dict()
+        self.vars: Mapping[str, bytes] = {}
 
     @abstractmethod
     def _extract_variables(self, data: bytes) -> Mapping[str, bytes]:

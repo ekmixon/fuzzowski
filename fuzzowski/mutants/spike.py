@@ -69,7 +69,7 @@ def s_switch(name: str):
     """
 
     if name not in blocks.REQUESTS:
-        raise FuzzowskiRuntimeError("blocks.REQUESTS NOT FOUND: %s" % name)
+        raise FuzzowskiRuntimeError(f"blocks.REQUESTS NOT FOUND: {name}")
 
     blocks.CURRENT = blocks.REQUESTS[name]
 
@@ -85,7 +85,7 @@ def s_initialize(name: str):
         name: Name of request
     """
     if name in blocks.REQUESTS:
-        raise FuzzowskiRuntimeError("blocks.REQUESTS ALREADY EXISTS: %s" % name)
+        raise FuzzowskiRuntimeError(f"blocks.REQUESTS ALREADY EXISTS: {name}")
 
     blocks.REQUESTS[name] = blocks.Request(name)
     blocks.CURRENT = blocks.REQUESTS[name]

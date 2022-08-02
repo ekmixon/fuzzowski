@@ -12,5 +12,4 @@ class MockHTTPTestMonitor(IMonitor):
 
     def test(self) -> bool:
         conn = self.get_connection_copy()
-        result = True
-        return result
+        return True

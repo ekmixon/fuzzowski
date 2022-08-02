@@ -56,13 +56,11 @@ class MockServerRequestHandler(BaseHTTPRequestHandler):
             content_length = int(self.headers['Content-Length'])
             body = self.rfile.read(content_length)
             print(body)
-            if body.startswith(b'op='):  # lets check the op value
-                if len(body[3:]) > 2000:                        # 3. If it has more than 2K chars, send error message,
-                                                                #  then shutdown the server (simulating a crash)
-                    print('Mocking error 2, Sending error 500')
-                    self.send_error(500, 'ERROR 500')
-                    mock_server.shutdown()
-                    return
+            if body.startswith(b'op=') and len(body[3:]) > 2000:
+                print('Mocking error 2, Sending error 500')
+                self.send_error(500, 'ERROR 500')
+                mock_server.shutdown()
+                return
 
             global id
             self.send_response(200)

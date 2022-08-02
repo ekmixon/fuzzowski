@@ -52,22 +52,18 @@ class CommandPrompt(object):
     # --------------------------------------------------------------- #
 
     def handle_exit(self, tokens: list) -> None:
-        if len(tokens) > 0:
-            if tokens[0] in ('exit', 'quit', 'q'):
-                # TODO: exit gracefully
-                sys.exit(0)
+        if tokens and tokens[0] in ('exit', 'quit', 'q'):
+            # TODO: exit gracefully
+            sys.exit(0)
 
     # --------------------------------------------------------------- #
 
     def handle_break(self, tokens: list) -> bool:
-        if tokens[0] in ('c', 'continue'):
-            return True
-        else:
-            return False
+        return tokens[0] in ('c', 'continue')
     # --------------------------------------------------------------- #
 
     def handle_command(self, tokens: list) -> None:
-        if len(tokens) > 0:
+        if tokens:
             self.cmd_handler.handle_command(tokens)
 
     # --------------------------------------------------------------- #

@@ -52,7 +52,7 @@ class Size(BitField):
         self.math = math
         self._name = name
         if self._name is None:
-            self._name = 'size_{}'.format(self.block_name)
+            self._name = f'size_{self.block_name}'
 
         # self._disabled = False
         self._rendered = b""
@@ -78,7 +78,7 @@ class Size(BitField):
             elif replace_node == self.block_name:
                 self._rendered = self._render_replaced_value(replace_value)
                 return self._rendered
-            elif original is True:
+            elif original:
                 self._rendered = self.original_value
                 return self._rendered
 
@@ -112,10 +112,7 @@ class Size(BitField):
         """
         Returns: the length of self or zero if inclusive flag is False.
         """
-        if self.inclusive:
-            return self.length
-        else:
-            return 0
+        return self.length if self.inclusive else 0
 
     def _calculated_length(self) -> int:
         """
@@ -131,9 +128,7 @@ class Size(BitField):
 
         Returns: the length of the actual mutation of the target block
         """
-        # length = len(self.request.names[self.block_name])
-        length = len(self.request.get_mutant(self.block_name))
-        return length
+        return len(self.request.get_mutant(self.block_name))
 
     @property
     def original_value(self):
@@ -151,10 +146,7 @@ class Size(BitField):
 
         Returns: the length of the original_value of the target block
         """
-        # length = len(self.request.names[self.block_name].original_value)
-        length = len(self.request.get_mutant(self.block_name).original_value)
-
-        return length
+        return len(self.request.get_mutant(self.block_name).original_value)
 
     def _get_dummy_value(self) -> bytes:
         """

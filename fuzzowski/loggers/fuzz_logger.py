@@ -79,8 +79,9 @@ class FuzzLogger(IFuzzLogger):
 
         :return: Test summary string, may be multi-line.
         """
-        summary = "Test Summary: {0} tests ran.\n".format(len(self.all_test_cases))
-        summary += "PASSED: {0} test cases.\n".format(len(self.passed_test_cases))
+        summary = "Test Summary: {0} tests ran.\n".format(
+            len(self.all_test_cases)
+        ) + "PASSED: {0} test cases.\n".format(len(self.passed_test_cases))
 
         if len(self.failed_test_cases) > 0:
             summary += "FAILED: {0} test cases:\n".format(len(self.failed_test_cases))

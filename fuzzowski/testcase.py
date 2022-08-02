@@ -57,8 +57,12 @@ class TestCase(object):
         # TODO: Mechanism for not opening if want to keep an open connection between fuzzed packets
         #  (e.g. CLI in Telnet Session)
         try:
-            self.logger.open_test_case(f"{self.id}: {self.name} {'[SENDING ORIGINAL]' if not fuzz else ''}",
-                                       name=self.name, index=self.id)
+            self.logger.open_test_case(
+                f"{self.id}: {self.name} {'' if fuzz else '[SENDING ORIGINAL]'}",
+                name=self.name,
+                index=self.id,
+            )
+
             self.logger.log_info(
                 f"Type: {type(self.request.mutant).__name__}. "
                 f"Default value: {repr(self.request.mutant.original_value)}. "
@@ -134,8 +138,7 @@ class TestCase(object):
                     self.session.add_last_case_as_suspect(e)
                     # raise
                     self.session.restart_target()  # Restart the target if a restarter was set
-                    recovered = self.wait_until_target_recovered()  # Wait for target to recover
-                    if recovered:
+                    if recovered := self.wait_until_target_recovered():
                         # target.open()  # Open a new connection, as the last one will be closed
                         self.open_fuzzing_target()
                     else:
@@ -160,11 +163,7 @@ class TestCase(object):
         if callback_data:
             data = callback_data
         else:
-            if original:
-                data = request.original_value
-            else:
-                data = request.render()
-
+            data = request.original_value if original else request.render()
         # 1. SEND DATA
         try:
             self.last_send = data
@@ -172,7 +171,7 @@ class TestCase(object):
         except exception.FuzzowskiTargetConnectionReset as e:  # Connection was reset
             self.logger.log_info("Target connection reset.")
             condition = self.session.opts.ignore_transmission_errors if original \
-                else self.session.opts.ignore_connection_issues_after_fuzz
+                    else self.session.opts.ignore_connection_issues_after_fuzz
             if not condition:
                 self.add_error(e)
                 self.session.add_suspect(self)
@@ -180,7 +179,7 @@ class TestCase(object):
         except exception.FuzzowskiTargetConnectionAborted as e:
             msg = f"Target connection lost (socket error: {e.socket_errno} {e.socket_errmsg})"
             condition = self.session.opts.ignore_transmission_errors if original \
-                else self.session.opts.ignore_connection_issues_after_fuzz
+                    else self.session.opts.ignore_connection_issues_after_fuzz
             if condition:
                 self.logger.log_info(msg)
             else:
@@ -265,7 +264,7 @@ class TestCase(object):
                 self.logger.log_info("Target still down")
             except Exception as e:
                 self.logger.log_info("Target still down")
-                self.logger.log_info("Exception {}: {}".format(type(e).__name__, str(e)))
+                self.logger.log_info(f"Exception {type(e).__name__}: {str(e)}")
         return recovered
 
     # --------------------------------------------------------------- #
@@ -282,15 +281,17 @@ class TestCase(object):
 
     def get_poc(self):
         """Gets the code of the PoC of this Test Case that can be run standalone"""
-        exploit_code = helpers.get_exploit_code(self.session.target, self.path,
-                                                self.session.opts.receive_data_after_each_request,
-                                                self.session.opts.receive_data_after_fuzz)
-        return exploit_code
+        return helpers.get_exploit_code(
+            self.session.target,
+            self.path,
+            self.session.opts.receive_data_after_each_request,
+            self.session.opts.receive_data_after_fuzz,
+        )
 
     # --------------------------------------------------------------- #
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.id)
+        return f'<{self.__class__.__name__} {self.id}>'
 
     def info(self):
         """Returns information about the test case"""
